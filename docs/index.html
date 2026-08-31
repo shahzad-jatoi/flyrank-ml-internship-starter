@@ -216,7 +216,17 @@
 
   <p>The rule-based baseline, by contrast, does not make a forward-looking prediction; it ranks current pages by an interpretable, directly-computed score. It was re-validated with the two signal checks in Section 3.2, one CONFIRMED and one MIXED, and is the basis for the recommendations below.</p>
 
-  <p class="fill">[Insert your top-10/20 queue screenshot or a small results table here from w04/w07's notebook output, and your reason-code breakdown chart from work/figures/w07_reason_code_breakdown.png]</p>
+  <p <figure>
+  <img src="https://raw.githubusercontent.com/shahzad-jatoi/flyrank-ml-internship-starter/main/work/w07_reason_code_breakdown.png" alt="Ranked queue by reason code, March 2026" style="max-width:100%; border:1px solid var(--line); border-radius:4px;">
+  <figcaption style="font-family:-apple-system, Helvetica, Arial, sans-serif; font-size:0.85rem; color:var(--muted); margin-top:8px;">Figure 1. The March 2026 refresh queue (n=59) by reason code.</figcaption>
+</figure>
+
+<div class="stat-row">
+  <div class="stat"><div class="num">59</div><div class="label">Pages ranked</div></div>
+  <div class="stat"><div class="num">47</div><div class="label">STALE_LOW_CTR</div></div>
+  <div class="stat"><div class="num">12</div><div class="label">PAGE1_LOW_CTR</div></div>
+</div>
+</p>
 </section>
 
 <section id="limitations">
@@ -240,8 +250,7 @@
     <li><strong>Do not treat the staleness signal alone as sufficient justification</strong> &mdash; its MIXED verdict means it should always be paired with a second signal (impressions or CTR) before a page is prioritized.</li>
     <li><strong>Do not deploy the predictive model</strong> in its current form; any future model must pass honest time-aware validation before being trusted for prioritization.</li>
   </ol>
-  <p class="fill">[Optionally embed your actual top-10 table from w07 here as a small HTML table]</p>
-</section>
+  </section>
 
 <section id="reproducibility">
   <h2>7. Reproducibility</h2>
