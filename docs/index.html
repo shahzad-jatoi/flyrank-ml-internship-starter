@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refresh-Priority Ranking: A Baseline-First Approach to Content Decay | FlyRank ML Internship Capstone</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #5a5a5a;
+    --line: #e2e2e2;
+    --accent: #b5442e;
+    --bg-soft: #faf9f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--ink);
+    line-height: 1.65;
+    background: #fff;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+  header.hero {
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--line);
+    padding: 64px 0 48px;
+  }
+  .kicker {
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  h1 { font-size: 2.1rem; line-height: 1.25; margin: 0 0 18px; }
+  .byline {
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  .byline a { color: var(--accent); }
+  section { padding: 40px 0; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: none; }
+  h2 {
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size: 1.4rem;
+    margin: 0 0 20px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--ink);
+  }
+  h3 { font-size: 1.1rem; margin: 28px 0 10px; }
+  p { margin: 0 0 16px; }
+  .lead { font-size: 1.15rem; color: var(--muted); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size: 0.9rem;
+  }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  th { background: var(--bg-soft); font-weight: 600; }
+  .callout {
+    background: var(--bg-soft);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 0.95rem;
+  }
+  .callout.warn { border-left-color: #c9852b; }
+  .stat-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+  }
+  .stat {
+    background: var(--bg-soft);
+    padding: 14px 18px;
+    border-radius: 6px;
+    min-width: 140px;
+  }
+  .stat .num { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .stat .label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  code {
+    background: var(--bg-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.88em;
+  }
+  .badge {
+    display: inline-block;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge.confirmed { background: #dcecdc; color: #2a6b2a; }
+  .badge.mixed { background: #f5e6c8; color: #8a5a10; }
+  .badge.failed { background: #f5d6d0; color: #a3341a; }
+  footer {
+    padding: 40px 0 60px;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  footer a { color: var(--accent); }
+  .fill { background: #fff3cd; padding: 1px 4px; }
+  @media (max-width: 600px) {
+    h1 { font-size: 1.6rem; }
+    header.hero { padding: 40px 0 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">FlyRank ML Internship &middot; Capstone Research Paper</div>
+    <h1>Refresh-Priority Ranking: A Baseline-First Approach to Identifying Declining Content</h1>
+    <div class="byline">By Shahzad Jatoi &middot; <a href="https://github.com/shahzad-jatoi/flyrank-ml-internship-starter" target="_blank">Repository</a> &middot; <span class="fill">August 2026</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section id="abstract">
+  <h2>Abstract</h2>
+  <p class="lead">
+    This paper asks a simple prioritization question: given a page's recent search performance, which pages are the best candidates for editorial refresh this cycle? I built and validated an interpretable rule-based baseline that combines staleness, impressions, and click-through rate, tested it against a predictive logistic-regression model, and evaluated both under an honest, time-aware validation split rather than a random one. The baseline's underlying signals were partially confirmed; click-through rate dropped sharply and consistently with search position (CONFIRMED), while the staleness-to-position relationship was inconsistent (MIXED). The predictive model, in contrast, failed honest validation: its accuracy dropped from 0.669 under a naive random split to 0.274 under a proper time-aware split; below what a majority-class guess would achieve; and was found to lean almost entirely on a single feature (average position) with a 0.819 correlation to its own label, a near-leakage risk. The practical result of this study is a validated, interpretable rule-based content refresh queue, not a machine-learned model, and the paper's ranked recommendations reflect that honestly.
+  </p>
+</section>
+<section id="introduction">
+  <h2>1. Introduction / Problem Statement</h2>
+  <p>
+    Content teams have limited editorial hours and a growing backlog of published pages. The practical decision this study supports is narrow but real: <strong>which pages should a content team refresh first, given limited capacity?</strong> The unit of analysis is a single page (one row = one page's aggregated monthly search performance). The action this work supports is a content lead choosing pages for a refresh queue. The cost of getting it wrong is two-sided; wasted editorial hours on a page that wouldn't have recovered anyway, or a page that keeps losing visibility because it was never flagged.
+  </p>
+  <p>
+    Machine learning is a plausible tool here because the underlying pattern (which pages are worth refreshing) plausibly depends on several interacting signals; staleness, visibility, click behavior, and content depth &mdash; that a simple two-condition rule can't combine cleanly. This paper tests whether a learned model actually earns that added complexity, or whether an interpretable baseline is the more honest deliverable.
+  </p>
+</section>
+
+<section id="data">
+  <h2>2. Data</h2>
+  <p>
+    This study uses the <strong>FlyRank Internship Warehouse</strong> dataset (Hugging Face, gated release), specifically:
+  </p>
+  <ul>
+    <li><code>fact_content_daily_performance</code> &mdash; monthly-partitioned daily search performance (GSC impressions, clicks, position; GA4 sessions and engagement), used for the months of <span class="fill">[Feb–May 2026, or the months you actually used]</span></li>
+    <li><code>dim_content</code> &mdash; page-level metadata: word count, content type, creation/update dates, publication status</li>
+  </ul>
+  <p><strong>Date windows used:</strong> baseline signal checks and the rule-based queue were built on <code>month=2026-03</code>. The predictive model was trained on February 2026 features against March 2026 outcomes, and tested on April 2026 features against May 2026 outcomes; a fully separated, non-overlapping time split.</p>
+  <p><strong>Excluded, and why:</strong> all client names, page URLs, and raw query text were excluded throughout &mdash; only anonymized hash keys were used, per the dataset's terms of use. Rows with no available GSC data (<code>gsc_data_available IS NOT TRUE</code>) were excluded, since they carry no usable search signal for this question.</p>
+</section>
+
+<section id="methodology">
+  <h2>3. Methodology</h2>
+
+  <h3>3.1 Label definition</h3>
+  <p>
+    The proxy label <code>declined</code> is defined as: a page's average search position in the outcome month is worse (numerically higher) than in the feature month. This is a defined proxy, not a directly observed business outcome &mdash; it approximates "this page needs attention" using only measurable search behavior.
+  </p>
+
+  <h3>3.2 Baseline (rule-based)</h3>
+  <p>
+    The baseline score combines three inputs the FlyRank research paper (March 2026) also treats as meaningful: staleness (days since last update), visibility (average impressions), and click capture (CTR). Score = <code>avg_impressions &times; (days_since_update / 365) / (avg_ctr + 0.005)</code>. The small constant in the denominator avoids the score becoming undefined for pages with a CTR of exactly zero.
+  </p>
+  <p>Two signals behind this rule were checked directly against the data before trusting them:</p>
+  <table>
+    <tr><th>Signal</th><th>Check</th><th>Verdict</th></tr>
+    <tr><td>CTR vs. position tier</td><td>Weighted CTR by position bucket, n printed per bucket</td><td><span class="badge confirmed">CONFIRMED</span></td></tr>
+    <tr><td>Staleness vs. position</td><td>Average position by staleness bucket, n printed per bucket</td><td><span class="badge mixed">MIXED</span></td></tr>
+  </table>
+  <p>CTR dropped monotonically as position tier worsened, matching FlyRank's own portfolio finding that click capture declines roughly 88% from top-3 to deep positions. Staleness showed a directional worsening from 0&ndash;90 days to 90&ndash;180 days, but did not continue worsening monotonically into the 180&ndash;365 day bucket; a clearly-explained negative result, not a discarded one.</p>
+
+  <h3>3.3 Predictive model</h3>
+  <p>A logistic regression model was trained on seven features (average impressions, clicks, CTR, position, word count, search volume, days since update) to predict <code>declined</code>. A shallow decision tree was trained as a secondary comparison.</p>
+
+  <h3>3.4 Validation design</h3>
+  <p>
+    The model was evaluated twice: once under a naive random 70/30 split (pooling all months together), and once under an honest, time-aware split (train on Feb&rarr;Mar outcomes, test on the fully separate Apr&rarr;May window). A grouped-by-client split was considered but a time-aware split was judged more important here, since the leakage risk in this data is primarily temporal (adjacent months of the same page), not cross-client.
+  </p>
+
+  <h3>3.5 Leakage audit</h3>
+  <p>
+    Every feature was confirmed to come from the same month as the rest of the feature set, with the label strictly derived from the following month only. However, <code>avg_position</code> showed a 0.819 correlation with the outcome variable it was used to predict; flagged as a near-leakage risk, since pages already ranking poorly mechanically have less room left to decline further.
+  </p>
+</section>
+
+<section id="results">
+  <h2>4. Results: Model vs. Baseline</h2>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">0.669</div><div class="label">Naive split accuracy</div></div>
+    <div class="stat"><div class="num">0.274</div><div class="label">Honest split accuracy</div></div>
+    <div class="stat"><div class="num">0.819</div><div class="label">avg_position &harr; label correlation</div></div>
+  </div>
+
+  <p>
+    Under a naive random split, the logistic regression model appeared to perform reasonably (accuracy 0.669). Under the honest, time-aware split; the split that actually reflects how this model would be used in deployment; accuracy dropped to 0.274, below what a simple majority-class guess would achieve in the test period. Permutation importance further showed that only <code>avg_position</code> carried genuine signal; every other feature (word count, impressions, days since update, clicks) showed <em>negative</em> importance, meaning the model performed better when those columns were shuffled into noise.
+  </p>
+
+  <div class="callout warn">
+    <strong>Honest framing:</strong> the predictive model does not generalize reliably across time windows in this dataset and is <strong>not included</strong> in this paper's operational recommendations. The gap between the naive and honest split numbers is itself the paper's clearest finding about validation design, not a footnote.
+  </div>
+
+  <p>The rule-based baseline, by contrast, does not make a forward-looking prediction; it ranks current pages by an interpretable, directly-computed score. It was re-validated with the two signal checks in Section 3.2, one CONFIRMED and one MIXED, and is the basis for the recommendations below.</p>
+
+  <p class="fill">[Insert your top-10/20 queue screenshot or a small results table here from w04/w07's notebook output, and your reason-code breakdown chart from work/figures/w07_reason_code_breakdown.png]</p>
+</section>
+
+<section id="limitations">
+  <h2>5. Limitations &amp; Honest Framing</h2>
+  <ul>
+    <li><strong>Observational, not causal:</strong> all findings describe correlations in past data. Refreshing a flagged page is not guaranteed to reverse its decline.</li>
+    <li><strong>Single-month baseline:</strong> the rule-based queue was built and checked on one month (March 2026) and has not been re-validated across multiple months.</li>
+    <li><strong>Unbalanced client history:</strong> not every client has equal data coverage in every window; some pages may be under- or over-represented due to when a client's tracking began, not their actual performance.</li>
+    <li><strong>Anonymized data:</strong> hash-keyed pages mean no result here can be tied back to what a page is actually about; a human must always inspect the real page before acting.</li>
+    <li><strong>The predictive model failed honest validation</strong> and is excluded from operational use, per Section 4.</li>
+  </ul>
+</section>
+
+<section id="recommendations">
+  <h2>6. Ranked Recommendations</h2>
+  <p>These recommendations combine the validated baseline signal with the FlyRank research paper's portfolio-level findings on refresh timing and click capture:</p>
+  <ol>
+    <li><strong>Refresh mature, stale, high-impression pages first</strong> &mdash; reason code <code>STALE_LOW_CTR</code> / <code>STALE_DECAY_ZONE</code>. This is the queue's top tier and the most defensible action, backed by a CONFIRMED CTR-position relationship.</li>
+    <li><strong>Improve snippets and titles on page-one pages with weak CTR</strong> &mdash; reason code <code>PAGE1_LOW_CTR</code>. Already-visible pages return clicks faster than new content.</li>
+    <li><strong>Expand thin-but-visible pages</strong> &mdash; reason code <code>THIN_BUT_VISIBLE</code>. Pages earning real impressions despite low word count are efficient expansion candidates.</li>
+    <li><strong>Do not treat the staleness signal alone as sufficient justification</strong> &mdash; its MIXED verdict means it should always be paired with a second signal (impressions or CTR) before a page is prioritized.</li>
+    <li><strong>Do not deploy the predictive model</strong> in its current form; any future model must pass honest time-aware validation before being trusted for prioritization.</li>
+  </ol>
+  <p class="fill">[Optionally embed your actual top-10 table from w07 here as a small HTML table]</p>
+</section>
+
+<section id="reproducibility">
+  <h2>7. Reproducibility</h2>
+  <p>All notebooks referenced in this paper are executed and committed in the accompanying repository:</p>
+  <ul>
+    <li><a href="https://github.com/shahzad-jatoi/flyrank-ml-internship-starter/blob/main/work/notebooks/w04_baseline_score.ipynb" target="_blank">w04_baseline_score.ipynb</a> &mdash; baseline rule, signal checks</li>
+    <li><a href="https://github.com/shahzad-jatoi/flyrank-ml-internship-starter/blob/main/work/notebooks/w05_model.ipynb" target="_blank">w05_model.ipynb</a> &mdash; predictive model, feature importance</li>
+    <li><a href="https://github.com/shahzad-jatoi/flyrank-ml-internship-starter/blob/main/work/notebooks/w06_validation_audit.ipynb" target="_blank">w06_validation_audit.ipynb</a> &mdash; honest split, leakage audit</li>
+    <li><a href="https://github.com/shahzad-jatoi/flyrank-ml-internship-starter/blob/main/work/notebooks/w07_action_playbook.ipynb" target="_blank">w07_action_playbook.ipynb</a> &mdash; ranked action queue, exports</li>
+    <li><a href="https://github.com/shahzad-jatoi/flyrank-ml-internship-starter/blob/main/work/notebooks/capstone.ipynb" target="_blank">capstone.ipynb</a> &mdash; this paper's supporting notebook</li>
+  </ul>
+  <p>Full repository: <a href="https://github.com/shahzad-jatoi/flyrank-ml-internship-starter" target="_blank">github.com/shahzad-jatoi/flyrank-ml-internship-starter</a></p>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <p><strong>Acknowledgments &amp; Data Credit</strong><br>
+    Built on the FlyRank ML Internship dataset. Learn more at <a href="https://flyrank.ai" target="_blank">flyrank.ai</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>
